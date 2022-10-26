@@ -7,7 +7,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-part 'src/water_drop_footer.dart';
+part 'src/custom_footer.dart';
 
 part 'src/water_drop_header.dart';
 

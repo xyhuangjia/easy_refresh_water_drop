@@ -51,7 +51,7 @@ class _MyHomePageState extends State<MyHomePage> {
       body: EasyRefresh(
         controller: easyRefreshController,
         header: WaterDropHeader(),
-        footer: WaterDropFooter(),
+        footer: CustomFooter(),
         onRefresh: () async {
           await Future.delayed(const Duration(seconds: 4));
           if (!mounted) {

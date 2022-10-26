@@ -3,7 +3,7 @@ part of easy_refresh_water_drop;
 const double _kDefaultCupertinoIndicatorRadius = 14.0;
 const double _kDefaultWaterDropCupertinoIndicatorRadius = 8.0;
 
-const _maxCircleRadius = 20.0;
+const _maxCircleRadius = 18.0;
 const _minCircleRadius = _maxCircleRadius / 5;
 
 double kCupertinoFrictionFactor(double overscrollFraction) =>
@@ -412,67 +412,3 @@ class _WaterDropPainter extends CustomPainter {
   }
 }
 
-class _QqPainter extends CustomPainter {
-  final Color? color;
-  final Animation<double>? listener;
-
-  double get value => listener!.value;
-  final Paint painter = Paint();
-
-  _QqPainter({this.color, this.listener}) : super(repaint: listener);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final double originH = 20.0;
-    final double middleW = size.width / 2;
-
-    final double circleSize = 12.0;
-
-    final double scaleRatio = 0.1;
-
-    final double offset = value;
-
-    painter.color = color!;
-    canvas.drawCircle(Offset(middleW, originH), circleSize, painter);
-    Path path = Path();
-    path.moveTo(middleW - circleSize, originH);
-
-    //drawleft
-    path.cubicTo(
-        middleW - circleSize,
-        originH,
-        middleW - circleSize + value * scaleRatio,
-        originH + offset / 5,
-        middleW - circleSize + value * scaleRatio * 2,
-        originH + offset);
-    path.lineTo(
-        middleW + circleSize - value * scaleRatio * 2, originH + offset);
-    //draw right
-    path.cubicTo(
-        middleW + circleSize - value * scaleRatio * 2,
-        originH + offset,
-        middleW + circleSize - value * scaleRatio,
-        originH + offset / 5,
-        middleW + circleSize,
-        originH);
-    //draw upper circle
-    path.moveTo(middleW - circleSize, originH);
-    path.arcToPoint(Offset(middleW + circleSize, originH),
-        radius: Radius.circular(circleSize));
-
-    //draw lowwer circle
-    path.moveTo(
-        middleW + circleSize - value * scaleRatio * 2, originH + offset);
-    path.arcToPoint(
-        Offset(middleW - circleSize + value * scaleRatio * 2, originH + offset),
-        radius: Radius.circular(value * scaleRatio));
-    path.close();
-    canvas.drawPath(path, painter);
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) {
-    // TODO: implement shouldRepaint
-    return oldDelegate != this;
-  }
-}

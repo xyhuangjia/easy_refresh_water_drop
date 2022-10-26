@@ -1,8 +1,8 @@
 part of easy_refresh_water_drop;
-
-class WaterDropFooter extends Footer {
+/// 自定义底部
+class CustomFooter extends Footer {
   final Key? key;
-  WaterDropFooter({
+  CustomFooter({
     this.key,
     bool clamping = false,
     double triggerOffset = 60,

@@ -53,7 +53,7 @@ class _MyHomePageState extends State<MyHomePage> {
         header: WaterDropHeader(),
         footer: CustomFooter(),
         onRefresh: () async {
-          await Future.delayed(const Duration(seconds: 4));
+          await Future.delayed(const Duration(milliseconds: 1500));
           if (!mounted) {
             return;
           }

@@ -1,19 +1,7 @@
 part of easy_refresh_water_drop;
 
-// const double _kDefaultCupertinoIndicatorRadius = 14.0;
-// const double _kDefaultWaterDropCupertinoIndicatorRadius = 8.0;
-
-const _maxCircleRadius = 15.0;
-const _minCircleRadius = _maxCircleRadius / 5;
-
-double kCupertinoFrictionFactor(double overscrollFraction) =>
-    0.25 * math.pow(1 - overscrollFraction, 2);
-
-double kCupertinoHorizontalFrictionFactor(double overscrollFraction) =>
-    0.52 * math.pow(1 - overscrollFraction, 2);
-
-class _WaterDropIndicator extends StatefulWidget {
-  const _WaterDropIndicator(
+class _CustomFooterIndicator extends StatefulWidget {
+  const _CustomFooterIndicator(
       {Key? key,
       required this.state,
       required this.reverse,
@@ -46,10 +34,10 @@ class _WaterDropIndicator extends StatefulWidget {
   final String refreshCompleteText;
 
   @override
-  State<_WaterDropIndicator> createState() => _WaterDropIndicatorState();
+  State<_CustomFooterIndicator> createState() => _CustomFooterIndicatorState();
 }
 
-class _WaterDropIndicatorState extends State<_WaterDropIndicator>
+class _CustomFooterIndicatorState extends State<_CustomFooterIndicator>
     with SingleTickerProviderStateMixin {
   Axis get _axis => widget.state.axis;
 
@@ -224,18 +212,18 @@ class _WaterDropIndicatorState extends State<_WaterDropIndicator>
           width: _axis == Axis.vertical ? double.infinity : offset,
         ),
         // WaterDrop.
-        if (_useWaterDrop)
-          Positioned(
-            top: 0,
-            left: 0,
-            right: _axis == Axis.vertical ? 0 : null,
-            bottom: _axis == Axis.vertical ? null : 0,
-            child: SizedBox(
-              height: _axis == Axis.vertical ? _offset : double.infinity,
-              width: _axis == Axis.vertical ? double.infinity : _offset,
-              child: _buildWaterDrop(),
-            ),
-          ),
+        // if (_useWaterDrop)
+        //   Positioned(
+        //     top: 0,
+        //     left: 0,
+        //     right: _axis == Axis.vertical ? 0 : null,
+        //     bottom: _axis == Axis.vertical ? null : 0,
+        //     child: SizedBox(
+        //       height: _axis == Axis.vertical ? _offset : double.infinity,
+        //       width: _axis == Axis.vertical ? double.infinity : _offset,
+        //       child: _buildWaterDrop(),
+        //     ),
+        //   ),
         // Indicator.
         Positioned(
           top: 0,
@@ -253,161 +241,5 @@ class _WaterDropIndicatorState extends State<_WaterDropIndicator>
         ),
       ],
     );
-  }
-}
-
-class _WaterDropPainter extends CustomPainter {
-  final Axis axis;
-  final Color color;
-  final double offset;
-  final double actualTriggerOffset;
-
-  _WaterDropPainter({
-    required this.axis,
-    required this.color,
-    required this.offset,
-    required this.actualTriggerOffset,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = color;
-    canvas.drawPath(
-        axis == Axis.vertical
-            ? _buildVerticalPath(size)
-            : _buildHorizontalPath(size),
-        paint);
-  }
-
-  Path _buildVerticalPath(Size size) {
-    Path path = Path();
-    final width = size.width;
-    double topRadius = _maxCircleRadius;
-    double bottomRadius = _maxCircleRadius;
-    if (offset > actualTriggerOffset) {
-      const radiusLimit = _maxCircleRadius - _minCircleRadius;
-      final radiusDifference = radiusLimit *
-          (1 - math.pow(100, -(offset - actualTriggerOffset) / 200));
-      topRadius = topRadius - radiusDifference / 4;
-      bottomRadius = bottomRadius - radiusDifference;
-    }
-    final topCenterY = actualTriggerOffset / 2;
-    final centerX = width / 2;
-    path.addOval(
-      Rect.fromCircle(
-        center: Offset(
-          centerX,
-          actualTriggerOffset / 2,
-        ),
-        radius: topRadius,
-      ),
-    );
-    if (offset > actualTriggerOffset) {
-      final bottomCenterY =
-          offset - (actualTriggerOffset / 2 - topRadius) - bottomRadius;
-      path.addOval(
-        Rect.fromCircle(
-          center: Offset(
-            centerX,
-            bottomCenterY,
-          ),
-          radius: bottomRadius,
-        ),
-      );
-
-      final bezierPath = Path();
-      final angle =
-          math.asin((topRadius - bottomRadius) / (topCenterY - bottomCenterY));
-      final topX1 = centerX - topRadius * math.cos(angle);
-      final topY1 = topCenterY + topRadius * math.sin(angle);
-      final topX2 = centerX + topRadius * math.cos(angle);
-      final topY2 = topY1;
-      final bottomX1 = centerX - bottomRadius * math.cos(angle);
-      final bottomY1 = bottomCenterY + bottomRadius * math.sin(angle);
-      final bottomX2 = centerX + bottomRadius * math.cos(angle);
-      final bottomY2 = bottomY1;
-      bezierPath.moveTo(centerX, topCenterY);
-      bezierPath.lineTo(topX1, topY1);
-      bezierPath.quadraticBezierTo((centerX - bottomRadius),
-          (bottomCenterY + topCenterY) / 2, bottomX1, bottomY1);
-      bezierPath.lineTo(bottomX2, bottomY2);
-      bezierPath.quadraticBezierTo(
-          (centerX + bottomRadius), (bottomCenterY + topY2) / 2, topX2, topY2);
-      bezierPath.close();
-
-      path = Path.combine(PathOperation.union, path, bezierPath);
-    }
-    return path;
-  }
-
-  Path _buildHorizontalPath(Size size) {
-    Path path = Path();
-    final height = size.height;
-    double topRadius = _maxCircleRadius;
-    double bottomRadius = _maxCircleRadius;
-    if (offset > actualTriggerOffset) {
-      const radiusLimit = _maxCircleRadius - _minCircleRadius;
-      final radiusDifference = radiusLimit *
-          (1 - math.pow(100, -(offset - actualTriggerOffset) / 200));
-      topRadius = topRadius - radiusDifference / 4;
-      bottomRadius = bottomRadius - radiusDifference;
-    }
-    final topCenterX = actualTriggerOffset / 2;
-    final centerY = height / 2;
-    path.addOval(
-      Rect.fromCircle(
-        center: Offset(
-          actualTriggerOffset / 2,
-          centerY,
-        ),
-        radius: topRadius,
-      ),
-    );
-    if (offset > actualTriggerOffset) {
-      final bottomCenterX =
-          offset - (actualTriggerOffset / 2 - topRadius) - bottomRadius;
-      path.addOval(
-        Rect.fromCircle(
-          center: Offset(
-            bottomCenterX,
-            centerY,
-          ),
-          radius: bottomRadius,
-        ),
-      );
-
-      final bezierPath = Path();
-      final angle =
-          math.asin((topRadius - bottomRadius) / (topCenterX - bottomCenterX));
-      final topY1 = centerY - topRadius * math.cos(angle);
-      final topX1 = topCenterX + topRadius * math.sin(angle);
-      final topY2 = centerY + topRadius * math.cos(angle);
-      final topX2 = topX1;
-      final bottomY1 = centerY - bottomRadius * math.cos(angle);
-      final bottomX1 = bottomCenterX + bottomRadius * math.sin(angle);
-      final bottomY2 = centerY + bottomRadius * math.cos(angle);
-      final bottomX2 = bottomX1;
-      bezierPath.moveTo(topCenterX, centerY);
-      bezierPath.lineTo(topX1, topY1);
-      bezierPath.quadraticBezierTo((bottomCenterX + topCenterX) / 2,
-          (centerY - bottomRadius), bottomX1, bottomY1);
-      bezierPath.lineTo(bottomX2, bottomY2);
-      bezierPath.quadraticBezierTo(
-          (bottomCenterX + topX2) / 2, (centerY + bottomRadius), topX2, topY2);
-      bezierPath.close();
-
-      path = Path.combine(PathOperation.union, path, bezierPath);
-    }
-    return path;
-  }
-
-  @override
-  bool shouldRepaint(covariant _WaterDropPainter oldDelegate) {
-    return oldDelegate.axis != axis ||
-        oldDelegate.color != color ||
-        oldDelegate.actualTriggerOffset != actualTriggerOffset ||
-        (oldDelegate.offset != offset &&
-            !(oldDelegate.offset < oldDelegate.actualTriggerOffset &&
-                offset < actualTriggerOffset));
   }
 }

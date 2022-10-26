@@ -1,4 +1,5 @@
 part of easy_refresh_water_drop;
+
 /// 自定义底部
 class CustomFooter extends Footer {
   final Key? key;
@@ -36,7 +37,7 @@ class CustomFooter extends Footer {
   Widget build(BuildContext context, IndicatorState state) {
     assert(state.axis == Axis.vertical,
         'WaterDropFooter does not support horizontal scrolling.');
-    return _WaterDropIndicator(
+    return _CustomFooterIndicator(
       key: key,
       state: state,
       reverse: state.reverse,

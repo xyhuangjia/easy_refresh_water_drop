@@ -12,3 +12,7 @@ part 'src/custom_footer.dart';
 part 'src/water_drop_header.dart';
 
 part 'src/water_drop_indicator.dart';
+
+// part 'src/custom_footer.dart';
+
+part 'src/custom_footer_indicator.dart';

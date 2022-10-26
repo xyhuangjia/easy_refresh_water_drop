@@ -1,5 +1,3 @@
-// import 'package:easy_refresh/easy_refresh.dart';
-// import 'package:flutter/src/widgets/framework.dart';
 part of easy_refresh_water_drop;
 
 class WaterDropHeader extends Header {
@@ -43,6 +41,8 @@ class WaterDropHeader extends Header {
       key: key,
       state: state,
       reverse: state.reverse,
+      backgroundColor: Colors.black26,
+      foregroundColor: Colors.black26,
     );
   }
 }

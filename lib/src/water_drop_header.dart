@@ -4,6 +4,7 @@ part of easy_refresh_water_drop;
 
 class WaterDropHeader extends Header {
   final Key? key;
+
   WaterDropHeader({
     this.key,
     bool clamping = false,
@@ -37,7 +38,7 @@ class WaterDropHeader extends Header {
   @override
   Widget build(BuildContext context, IndicatorState state) {
     assert(state.axis == Axis.vertical,
-        'HalloweenFooter does not support horizontal scrolling.');
+        'WaterDropHeader does not support horizontal scrolling.');
     return _WaterDropIndicator(
       key: key,
       state: state,

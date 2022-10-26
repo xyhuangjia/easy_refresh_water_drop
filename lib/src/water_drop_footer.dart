@@ -35,7 +35,7 @@ class WaterDropFooter extends Footer {
   @override
   Widget build(BuildContext context, IndicatorState state) {
     assert(state.axis == Axis.vertical,
-        'HalloweenFooter does not support horizontal scrolling.');
+        'WaterDropFooter does not support horizontal scrolling.');
     return _WaterDropIndicator(
       key: key,
       state: state,

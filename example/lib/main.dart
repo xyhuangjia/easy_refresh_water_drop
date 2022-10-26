@@ -39,6 +39,9 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  EasyRefreshController easyRefreshController = EasyRefreshController(
+      controlFinishRefresh: true, controlFinishLoad: true);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -46,6 +49,7 @@ class _MyHomePageState extends State<MyHomePage> {
         title: Text(widget.title),
       ),
       body: EasyRefresh(
+        controller: easyRefreshController,
         header: WaterDropHeader(),
         footer: WaterDropFooter(),
         onRefresh: () async {
@@ -56,6 +60,8 @@ class _MyHomePageState extends State<MyHomePage> {
           setState(() {
             _count = 10;
           });
+          easyRefreshController.finishRefresh();
+          easyRefreshController.resetFooter();
         },
         onLoad: () async {
           await Future.delayed(const Duration(seconds: 4));
@@ -65,6 +71,7 @@ class _MyHomePageState extends State<MyHomePage> {
           setState(() {
             _count += 5;
           });
+          easyRefreshController.finishLoad();
         },
         child: ListView.builder(
           itemBuilder: (context, index) {

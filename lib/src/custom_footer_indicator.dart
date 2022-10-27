@@ -1,197 +1,445 @@
 part of easy_refresh_water_drop;
 
-class _CustomFooterIndicator extends StatefulWidget {
-  const _CustomFooterIndicator(
-      {Key? key,
-      required this.state,
-      required this.reverse,
-      this.foregroundColor,
-      this.userWaterDrop = true,
-      this.backgroundColor,
-      this.emptyWidget,
-      this.refreshCompleteText = "刷新完成"})
-      : super(key: key);
+/// Pull icon widget builder.
+typedef CIPullIconBuilder = Widget Function(
+    BuildContext context, IndicatorState state, double animation);
 
+/// Text widget builder.
+typedef CITextBuilder = Widget Function(
+    BuildContext context, IndicatorState state, String text);
+
+/// Message widget builder.
+typedef CIMessageBuilder = Widget Function(
+    BuildContext context, IndicatorState state, String text, DateTime dateTime);
+
+/// Default progress indicator size.
+const _kDefaultProgressIndicatorSize = 20.0;
+
+/// Default progress indicator stroke width.
+const _kDefaultProgressIndicatorStrokeWidth = 2.0;
+
+/// Classic indicator.
+/// Base widget for [ClassicHeader] and [ClassicFooter].
+class _CustomFooterIndicator extends StatefulWidget {
+  /// Indicator properties and state.
   final IndicatorState state;
+
+  /// The location of the widget.
+  /// Only supports [MainAxisAlignment.center],
+  /// [MainAxisAlignment.start] and [MainAxisAlignment.end].
+  final MainAxisAlignment mainAxisAlignment;
+
+  /// Background color.
+  final Color? backgroundColor;
+
+  /// Text on [IndicatorMode.drag].
+  final String dragText;
+
+  /// Text on [IndicatorMode.armed].
+  final String armedText;
+
+  /// Text on [IndicatorMode.ready].
+  final String readyText;
+
+  /// Text on [IndicatorMode.processing].
+  final String processingText;
+
+  /// Text on [IndicatorMode.processed].
+  final String processedText;
+
+  /// Text on [IndicatorResult.noMore].
+  final String noMoreText;
+
+  /// Text on [IndicatorResult.fail].
+  final String failedText;
+
+  /// Whether to display text.
+  final bool showText;
+
+  /// Message text.
+  /// %T will be replaced with the last time.
+  final String messageText;
+
+  /// Whether to display message.
+  final bool showMessage;
+
+  /// The dimension of the text area.
+  /// When less than 0, calculate the length of the text widget.
+  final double? textDimension;
+
+  /// The dimension of the icon area.
+  final double iconDimension;
+
+  /// Spacing between text and icon.
+  final double spacing;
 
   /// True for up and left.
   /// False for down and right.
   final bool reverse;
 
-  /// Indicator foreground color.
-  final Color? foregroundColor;
+  /// Icon when [IndicatorResult.success].
+  final Widget? succeededIcon;
 
-  /// Use WaterDrop style.
-  final bool userWaterDrop;
+  /// Icon when [IndicatorResult.fail].
+  final Widget? failedIcon;
 
-  /// WaterDrop background color.
-  final Color? backgroundColor;
+  /// Icon when [IndicatorResult.noMore].
+  final Widget? noMoreIcon;
 
-  /// Empty widget.
-  /// When result is [IndicatorResult.noMore].
-  final Widget? emptyWidget;
+  /// Icon on pull.
+  final CIPullIconBuilder? pullIconBuilder;
 
-  final String refreshCompleteText;
+  /// Text style.
+  final TextStyle? textStyle;
+
+  /// Build text.
+  final CITextBuilder? textBuilder;
+
+  /// Text style.
+  final TextStyle? messageStyle;
+
+  /// Build message.
+  final CIMessageBuilder? messageBuilder;
+
+  /// Link [Stack.clipBehavior].
+  final Clip clipBehavior;
+
+  /// Icon style.
+  final IconThemeData? iconTheme;
+
+  /// Progress indicator size.
+  final double? progressIndicatorSize;
+
+  /// Progress indicator stroke width.
+  /// See [CircularProgressIndicator.strokeWidth].
+  final double? progressIndicatorStrokeWidth;
+
+  const _CustomFooterIndicator({
+    Key? key,
+    required this.state,
+    required this.mainAxisAlignment,
+    this.backgroundColor,
+    required this.dragText,
+    required this.armedText,
+    required this.readyText,
+    required this.processingText,
+    required this.processedText,
+    required this.noMoreText,
+    required this.failedText,
+    this.showText = true,
+    required this.messageText,
+    required this.reverse,
+    this.showMessage = true,
+    this.textDimension,
+    this.iconDimension = 24,
+    this.spacing = 16,
+    this.succeededIcon,
+    this.failedIcon,
+    this.noMoreIcon,
+    this.pullIconBuilder,
+    this.textStyle,
+    this.textBuilder,
+    this.messageStyle,
+    this.messageBuilder,
+    this.clipBehavior = Clip.hardEdge,
+    this.iconTheme,
+    this.progressIndicatorSize,
+    this.progressIndicatorStrokeWidth,
+  })  : assert(
+            mainAxisAlignment == MainAxisAlignment.start ||
+                mainAxisAlignment == MainAxisAlignment.center ||
+                mainAxisAlignment == MainAxisAlignment.end,
+            'Only supports [MainAxisAlignment.center], [MainAxisAlignment.start] and [MainAxisAlignment.end].'),
+        super(key: key);
 
   @override
   State<_CustomFooterIndicator> createState() => _CustomFooterIndicatorState();
 }
 
 class _CustomFooterIndicatorState extends State<_CustomFooterIndicator>
-    with SingleTickerProviderStateMixin {
-  Axis get _axis => widget.state.axis;
+    with TickerProviderStateMixin<_CustomFooterIndicator> {
+  /// Icon [AnimatedSwitcher] switch key.
+  late GlobalKey _iconAnimatedSwitcherKey;
 
-  IndicatorMode get _mode => widget.state.mode;
+  /// Update time.
+  late DateTime _updateTime;
+
+  /// Icon animation controller.
+  late AnimationController _iconAnimationController;
+
+  MainAxisAlignment get _mainAxisAlignment => widget.mainAxisAlignment;
+
+  Axis get _axis => widget.state.axis;
 
   double get _offset => widget.state.offset;
 
   double get _actualTriggerOffset => widget.state.actualTriggerOffset;
 
-  // double get _radius => _useWaterDrop
-  //     ? _kDefaultWaterDropCupertinoIndicatorRadius
-  //     : _kDefaultCupertinoIndicatorRadius;
+  double get _triggerOffset => widget.state.triggerOffset;
 
-  late AnimationController _waterDropHiddenController;
+  double get _safeOffset => widget.state.safeOffset;
 
-  bool get _useWaterDrop =>
-      widget.userWaterDrop && widget.state.indicator.infiniteOffset == null;
+  IndicatorMode get _mode => widget.state.mode;
+
+  IndicatorResult get _result => widget.state.result;
 
   @override
   void initState() {
     super.initState();
-    _waterDropHiddenController = AnimationController(
+    _iconAnimatedSwitcherKey = GlobalKey();
+    _updateTime = DateTime.now();
+    _iconAnimationController = AnimationController(
+      value: 0,
       vsync: this,
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(microseconds: 200),
     );
-    widget.state.notifier.addModeChangeListener(_onModeChange);
+    _iconAnimationController.addListener(() => setState(() {}));
+  }
+
+  @override
+  void didUpdateWidget(_CustomFooterIndicator oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Update time.
+    if (widget.state.mode == IndicatorMode.processed &&
+        oldWidget.state.mode != IndicatorMode.processed) {
+      _updateTime = DateTime.now();
+    }
+    if (widget.state.mode == IndicatorMode.armed &&
+        oldWidget.state.mode == IndicatorMode.drag) {
+      // Armed animation.
+      _iconAnimationController.animateTo(1,
+          duration: const Duration(milliseconds: 200));
+    } else if (widget.state.mode == IndicatorMode.drag &&
+        oldWidget.state.mode == IndicatorMode.armed) {
+      // Recovery animation.
+      _iconAnimationController.animateBack(0,
+          duration: const Duration(milliseconds: 200));
+    } else if (widget.state.mode == IndicatorMode.processing &&
+        oldWidget.state.mode != IndicatorMode.processing) {
+      // Reset animation.
+      _iconAnimationController.reset();
+    }
   }
 
   @override
   void dispose() {
-    widget.state.notifier.removeModeChangeListener(_onModeChange);
-    _waterDropHiddenController.dispose();
     super.dispose();
+    _iconAnimationController.dispose();
   }
 
-  /// Mode change listener.
-  void _onModeChange(IndicatorMode mode, double offset) {
-    if (mode == IndicatorMode.ready) {
-      if (!_waterDropHiddenController.isAnimating) {
-        _waterDropHiddenController.forward(from: 0);
-      }
+  /// The text of the current state.
+  String get _currentText {
+    if (_result == IndicatorResult.noMore) {
+      return widget.noMoreText;
     }
-  }
-
-  Widget _buildIndicator() {
-    final scale = (_offset / _actualTriggerOffset).clamp(0.01, 0.99);
-    Widget indicator;
     switch (_mode) {
       case IndicatorMode.drag:
+        return widget.dragText;
       case IndicatorMode.armed:
-        const Curve opacityCurve = Interval(
-          0.0,
-          0.8,
-          curve: Curves.easeInOut,
-        );
-        indicator = Opacity(
-          key: const ValueKey('indicator'),
-          opacity: opacityCurve.transform(scale),
-          child: Icon(
-            Icons.autorenew,
-            // size: _radius,
-            color: widget.foregroundColor,
-          ),
-        );
-        break;
+        return widget.armedText;
       case IndicatorMode.ready:
+        return widget.readyText;
       case IndicatorMode.processing:
+        return widget.processingText;
       case IndicatorMode.processed:
-        indicator = SizedBox(
-            width: 20.0,
-            height: 20.0,
-            child: defaultTargetPlatform == TargetPlatform.iOS
-                ? const CupertinoActivityIndicator()
-                : const CircularProgressIndicator(strokeWidth: 2.0));
-
-        break;
       case IndicatorMode.done:
-        indicator = Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Icon(
-              Icons.done,
-              color: Colors.grey,
-            ),
-            Container(
-              width: 15.0,
-            ),
-            Text(
-              widget.refreshCompleteText,
-              style: TextStyle(color: Colors.grey),
-            )
-          ],
-        );
-        break;
+        if (_result == IndicatorResult.fail) {
+          return widget.failedText;
+        } else {
+          return widget.processedText;
+        }
       default:
-        indicator = const SizedBox(
-          key: ValueKey('indicator'),
+        return widget.dragText;
+    }
+  }
+
+  /// Message text.
+  String get _messageText {
+    if (widget.messageText.contains('%T')) {
+      String fillChar = _updateTime.minute < 10 ? "0" : "";
+      return widget.messageText.replaceAll(
+          "%T", "${_updateTime.hour}:$fillChar${_updateTime.minute}");
+    }
+    return widget.messageText;
+  }
+
+  /// Build icon.
+  Widget _buildIcon() {
+    Widget icon;
+    final iconTheme = widget.iconTheme ?? Theme.of(context).iconTheme;
+    ValueKey iconKey;
+    if (_result == IndicatorResult.noMore) {
+      iconKey = const ValueKey(IndicatorResult.noMore);
+      icon = SizedBox(
+        child: widget.noMoreIcon ??
+            const Icon(
+              Icons.inbox_outlined,
+            ),
+      );
+    } else if (_mode == IndicatorMode.processing ||
+        _mode == IndicatorMode.ready) {
+      iconKey = const ValueKey(IndicatorMode.processing);
+      final progressIndicatorSize =
+          widget.progressIndicatorSize ?? _kDefaultProgressIndicatorSize;
+      icon = SizedBox(
+        width: progressIndicatorSize,
+        height: progressIndicatorSize,
+        child: CircularProgressIndicator(
+          strokeWidth: widget.progressIndicatorStrokeWidth ??
+              _kDefaultProgressIndicatorStrokeWidth,
+          color: iconTheme.color,
+        ),
+      );
+    } else if (_mode == IndicatorMode.processed ||
+        _mode == IndicatorMode.done) {
+      if (_result == IndicatorResult.fail) {
+        iconKey = const ValueKey(IndicatorResult.fail);
+        icon = SizedBox(
+          child: widget.failedIcon ??
+              const Icon(
+                Icons.error_outline,
+              ),
         );
-        break;
+      } else {
+        iconKey = const ValueKey(IndicatorResult.success);
+        icon = SizedBox(
+          child: widget.succeededIcon ??
+              Transform.rotate(
+                angle: _axis == Axis.vertical ? 0 : -math.pi / 2,
+                child: const Icon(
+                  Icons.done,
+                ),
+              ),
+        );
+      }
+    } else {
+      iconKey = const ValueKey(IndicatorMode.drag);
+      icon = SizedBox(
+        child: widget.pullIconBuilder
+                ?.call(context, widget.state, _iconAnimationController.value) ??
+            Transform.rotate(
+              angle: -math.pi * _iconAnimationController.value,
+              child: Icon(widget.reverse
+                  ? (_axis == Axis.vertical
+                      ? Icons.arrow_upward
+                      : Icons.arrow_back)
+                  : (_axis == Axis.vertical
+                      ? Icons.arrow_downward
+                      : Icons.arrow_forward)),
+            ),
+      );
     }
     return AnimatedSwitcher(
+      key: _iconAnimatedSwitcherKey,
       duration: const Duration(milliseconds: 300),
-      reverseDuration: const Duration(milliseconds: 100),
-      child: widget.state.result == IndicatorResult.noMore
-          ? widget.emptyWidget != null
-              ? SizedBox(
-                  key: const ValueKey('noMore'),
-                  child: widget.emptyWidget!,
-                )
-              : Icon(
-                  CupertinoIcons.archivebox,
-                  key: const ValueKey('noMore'),
-                  color: widget.foregroundColor,
-                )
-          : indicator,
+      reverseDuration: const Duration(milliseconds: 200),
+      transitionBuilder: (child, animation) {
+        return FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(
+            child: child,
+            scale: animation,
+          ),
+        );
+      },
+      child: IconTheme(
+        key: iconKey,
+        data: iconTheme,
+        child: icon,
+      ),
     );
   }
 
-  Widget _buildWaterDrop() {
-    Widget waterDropWidget = CustomPaint(
-      painter: _WaterDropPainter(
-        axis: _axis,
-        offset: _offset,
-        actualTriggerOffset: _actualTriggerOffset,
-        color: widget.backgroundColor ?? Theme.of(context).splashColor,
-      ),
-    );
-    return AnimatedBuilder(
-      animation: _waterDropHiddenController,
-      builder: (context, _) {
-        double opacity = 1;
-        if (_mode == IndicatorMode.drag) {
-          final scale = (_offset / _actualTriggerOffset).clamp(0.0, 1.0);
-          const Curve opacityCurve = Interval(
-            0.0,
-            0.8,
-            curve: Curves.easeInOut,
-          );
-          opacity = opacityCurve.transform(scale);
-        } else if (_mode == IndicatorMode.armed) {
-          opacity = 1;
-        } else if (_mode == IndicatorMode.ready ||
-            _mode == IndicatorMode.processing ||
-            _mode == IndicatorMode.processed ||
-            _mode == IndicatorMode.done) {
-          opacity = 1 - _waterDropHiddenController.value;
-        } else {
-          opacity = 0;
-        }
-        return Opacity(
-          opacity: opacity,
-          child: waterDropWidget,
+  /// Build text.
+  Widget _buildText() {
+    return widget.textBuilder?.call(context, widget.state, _currentText) ??
+        Text(
+          _currentText,
+          style: widget.textStyle ?? Theme.of(context).textTheme.subtitle1,
         );
-      },
+  }
+
+  /// Build text.
+  Widget _buildMessage() {
+    return widget.messageBuilder
+            ?.call(context, widget.state, widget.messageText, _updateTime) ??
+        Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Text(
+            _messageText,
+            style: widget.messageStyle ?? Theme.of(context).textTheme.caption,
+          ),
+        );
+  }
+
+  /// When the list direction is vertically.
+  Widget _buildVerticalWidget() {
+    return Stack(
+      clipBehavior: widget.clipBehavior,
+      children: [
+        if (_mainAxisAlignment == MainAxisAlignment.center)
+          Positioned(
+            left: 0,
+            right: 0,
+            top: _offset < _actualTriggerOffset
+                ? -(_actualTriggerOffset -
+                        _offset +
+                        (widget.reverse ? _safeOffset : -_safeOffset)) /
+                    2
+                : (!widget.reverse ? _safeOffset : 0),
+            bottom: _offset < _actualTriggerOffset
+                ? null
+                : (widget.reverse ? _safeOffset : 0),
+            height:
+                _offset < _actualTriggerOffset ? _actualTriggerOffset : null,
+            child: Center(
+              child: _buildVerticalBody(),
+            ),
+          ),
+        if (_mainAxisAlignment != MainAxisAlignment.center)
+          Positioned(
+            left: 0,
+            right: 0,
+            top: _mainAxisAlignment == MainAxisAlignment.start
+                ? (!widget.reverse ? _safeOffset : 0)
+                : null,
+            bottom: _mainAxisAlignment == MainAxisAlignment.end
+                ? (widget.reverse ? _safeOffset : 0)
+                : null,
+            child: _buildVerticalBody(),
+          ),
+      ],
+    );
+  }
+
+  /// The body when the list is vertically direction.
+  Widget _buildVerticalBody() {
+    return Container(
+      alignment: Alignment.center,
+      height: _triggerOffset,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            alignment: Alignment.center,
+            width: widget.iconDimension,
+            child: _buildIcon(),
+          ),
+          if (widget.showText)
+            Container(
+              margin: EdgeInsets.only(left: widget.spacing),
+              width: widget.textDimension,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildText(),
+                  if (widget.showMessage) _buildMessage(),
+                ],
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -201,45 +449,13 @@ class _CustomFooterIndicatorState extends State<_CustomFooterIndicator>
     if (widget.state.indicator.infiniteOffset != null &&
         widget.state.indicator.position == IndicatorPosition.locator &&
         (_mode != IndicatorMode.inactive ||
-            widget.state.result == IndicatorResult.noMore)) {
+            _result == IndicatorResult.noMore)) {
       offset = _actualTriggerOffset;
     }
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        SizedBox(
-          height: _axis == Axis.vertical ? offset : double.infinity,
-          width: _axis == Axis.vertical ? double.infinity : offset,
-        ),
-        // WaterDrop.
-        // if (_useWaterDrop)
-        //   Positioned(
-        //     top: 0,
-        //     left: 0,
-        //     right: _axis == Axis.vertical ? 0 : null,
-        //     bottom: _axis == Axis.vertical ? null : 0,
-        //     child: SizedBox(
-        //       height: _axis == Axis.vertical ? _offset : double.infinity,
-        //       width: _axis == Axis.vertical ? double.infinity : _offset,
-        //       child: _buildWaterDrop(),
-        //     ),
-        //   ),
-        // Indicator.
-        Positioned(
-          top: 0,
-          left: 0,
-          right: _axis == Axis.vertical ? 0 : null,
-          bottom: _axis == Axis.vertical ? null : 0,
-          child: Container(
-            alignment: Alignment.center,
-            height:
-                _axis == Axis.vertical ? _actualTriggerOffset : double.infinity,
-            width:
-                _axis == Axis.vertical ? double.infinity : _actualTriggerOffset,
-            child: _buildIndicator(),
-          ),
-        ),
-      ],
-    );
+    return Container(
+        color: widget.backgroundColor,
+        width: _axis == Axis.vertical ? double.infinity : offset,
+        height: _axis == Axis.horizontal ? double.infinity : offset,
+        child: _buildVerticalWidget());
   }
 }

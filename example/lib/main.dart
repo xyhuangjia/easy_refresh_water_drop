@@ -50,8 +50,9 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: EasyRefresh(
         controller: easyRefreshController,
+        refreshOnStart: true,
         header: WaterDropHeader(),
-        footer: CustomFooter(),
+        footer: CustomFooter(showMessage: false),
         onRefresh: () async {
           await Future.delayed(const Duration(milliseconds: 1500));
           if (!mounted) {
@@ -69,9 +70,15 @@ class _MyHomePageState extends State<MyHomePage> {
             return;
           }
           setState(() {
-            _count += 5;
+            _count += 10;
           });
-          easyRefreshController.finishLoad();
+          if (_count >= 20) {
+            easyRefreshController.finishLoad(IndicatorResult.noMore);
+            // easyRefreshController.resetFooter();
+          } else {
+            easyRefreshController.finishLoad(IndicatorResult.success);
+            easyRefreshController.resetFooter();
+          }
         },
         child: ListView.builder(
           itemBuilder: (context, index) {

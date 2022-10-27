@@ -122,8 +122,13 @@ class _WaterDropIndicatorState extends State<_WaterDropIndicator>
             width: 20.0,
             height: 20.0,
             child: defaultTargetPlatform == TargetPlatform.iOS
-                ? const CupertinoActivityIndicator()
-                : const CircularProgressIndicator(strokeWidth: 2.0));
+                ? CupertinoActivityIndicator(
+                    color: widget.foregroundColor,
+                  )
+                : CircularProgressIndicator(
+                    strokeWidth: 2.0,
+                    color: widget.foregroundColor,
+                  ));
 
         break;
       case IndicatorMode.done:
